@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site List</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+form {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+input {
+    flex: 1;
+    margin-right: 10px;
+    padding: 5px;
+}
+
+button {
+    padding: 5px 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.online {
+    color: green;
+}
+
+.offline {
+    color: red;
+}
+
+</style>
+</head>
+<body>
+    <h1>Site List</h1>
+    <form id="add-site-form">
+        <label for="site-title">Site Title:</label>
+        <input type="text" id="site-title" required>
+        <label for="site-url">Site URL:</label>
+        <input type="url" id="site-url" required>
+        <button type="submit">Add Site</button>
+    </form>
+    <table id="site-table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+// Function to check site status
+function checkSiteStatus(url) {
+    return new Promise((resolve, reject) => {
+        let img = new Image();
+        img.onload = () => resolve('online');
+        img.onerror = () => resolve('offline');
+        img.src = url + '?' + new Date().getTime();
+    });
+}
+
+// Function to save sites to local storage
+function saveSites(sites) {
+    localStorage.setItem('sites', JSON.stringify(sites));
+}
+
+// Function to load sites from local storage
+function loadSites() {
+    let sites = localStorage.getItem('sites');
+    return sites ? JSON.parse(sites) : [];
+}
+
+// Function to display sites in the table
+function displaySites(sites) {
+    let tbody = $('#site-table tbody');
+    tbody.empty();
+    for (let site of sites) {
+        let row = $('<tr></tr>');
+        row.append(`<td>${site.title}</td>`);
+        row.append(`<td>${site.url}</td>`);
+
+        let statusCell = $('<td>Loading...</td>');
+        checkSiteStatus(site.url).then(status => {
+            statusCell.text(status);
+            statusCell.addClass(status);
+        });
+        row.append(statusCell);
+
+        let visitButton = $('<button>Visit</button>');
+        visitButton.click(() => window.open(site.url, '_blank'));
+        let actionCell = $('<td></td>');
+        actionCell.append(visitButton);
+        row.append(actionCell);
+
+        tbody.append(row);
+    }
+}
+
+// Add site form submission handler
+$('#add-site-form').submit(function(event) {
+    event.preventDefault();
+    let title = $('#site-title').val();
+    let url = $('#site-url').val();
+
+    let sites = loadSites();
+    sites.push({ title, url });
+    saveSites(sites);
+    displaySites(sites);
+
+    $('#site-title').val('');
+    $('#site-url').val('');
+});
+
+// Load and display sites on page load
+displaySites(loadSites());
+
+</script>
+</body>
+</html>
